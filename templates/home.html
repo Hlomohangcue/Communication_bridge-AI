@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesture and Text Translator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .video-container, .translation-container, .text-to-gesture-container {
+            margin: 20px;
+        }
+        #gestureVideo {
+            border: 2px solid #000;
+            width: 640px;
+            height: 480px;
+        }
+        .gesture-output, .gesture-images {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .gesture-images img {
+            margin: 5px;
+            width: 100px;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Real-Time Gesture and Text Translator</h1>
+
+        <!-- Text to Gesture Translation Section -->
+        <div class="text-to-gesture-container">
+            <h2>Text to Gesture Translation</h2>
+            <form id="textForm">
+                <label for="textInput">Enter Text:</label>
+                <input type="text" id="textInput" name="text">
+                <button type="submit">Translate to Gesture</button>
+            </form>
+            <div id="gestureImages" class="gesture-images">
+                <!-- Gesture images for text will be displayed here -->
+            </div>
+        </div>
+
+        <!-- Gesture to Text Translation Section -->
+        <div class="video-container">
+            <h2>Gesture to Text Translation</h2>
+            <img id="gestureVideo" src="{{ url_for('video_feed') }}" alt="Gesture Video Feed">
+        </div>
+
+        <div class="translation-container">
+            <h2>Detected Gestures</h2>
+            <div id="gestureDisplay" class="gesture-output">No gestures detected yet.</div>
+        </div>
+    </div>
+
+    <script>
+        // Text to Gesture Translation
+        const textForm = document.getElementById('textForm');
+        textForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const text = document.getElementById('textInput').value;
+
+            fetch('/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ 'text': text })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const gestureImagesDiv = document.getElementById('gestureImages');
+                gestureImagesDiv.innerHTML = '';  // Clear previous images
+                data.gesture_urls.forEach(url => {
+                    const img = document.createElement('img');
+                    img.src = url;
+                    gestureImagesDiv.appendChild(img);
+                });
+            });
+        });
+
+        // Gesture to Text Translation
+        function updateGestureDisplay() {
+            fetch('/get_constructed_word')
+                .then(response => response.json())
+                .then(data => {
+                    const gestureDisplay = document.getElementById('gestureDisplay');
+                    gestureDisplay.textContent = `Constructed Word: ${data.word}`;
+                });
+        }
+
+        // Refresh detected gestures every 5 seconds
+        setInterval(updateGestureDisplay, 5000);
+    </script>
+</body>
+</html>
